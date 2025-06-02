@@ -81,7 +81,7 @@ class SimpleLinearRegression:
 # alpha=learning rate
 # gradinet vo hota hai jab apan same function ka derivative do alag alag paramter se le jase idhar ek bar m se aur ek bar c se
 
-df=pd.read_csv(r"C:\Users\Dell\OneDrive\Desktop\train.csv") 
+df=pd.read_csv(data set file path) 
 print(df.info())
 print(df.describe())
 
