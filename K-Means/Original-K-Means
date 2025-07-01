@@ -12,6 +12,7 @@ class KMeansClustering:
         self.tolerance=tolerance        # minimum allowed change in centroids, suppose if centroid is 2.05 and after another iter it is 2.5001 we stop
         self.n_samples=None
         self.n_features=None
+        self.cost_history=[]
 
     def fit(self,X):
         self.n_samples,self.n_features=X.shape
@@ -24,6 +25,9 @@ class KMeansClustering:
             old_centroids=self.centroids.copy()
             self.centroids = np.array([X[cluster].mean(axis=0) if len(cluster) > 0 else old_centroids[i]
                                        for i, cluster in enumerate(self.clusters)])
+            
+            cost = self.compute_cost(X)
+            self.cost_history.append(cost)
             
             difference=np.linalg.norm(self.centroids-old_centroids)
             if difference < self.tolerance:
@@ -51,13 +55,22 @@ class KMeansClustering:
     def predict(self,X):
         predictions = [self.nearest_centriod(x) for x in X]
         return np.array(predictions)
+    
+    def compute_cost(self,X):
+        cost=0
+        for cluster_index,value in enumerate(self.clusters):
+            centroid=self.centroids[cluster_index]
+            for point_idx in value:
+                cost += euclidean_distance(X[point_idx], centroid) ** 2
+        return cost
+
 
 from sklearn.datasets import make_blobs
 import matplotlib.pyplot as plt
 
-X, _ = make_blobs(n_samples=300, centers=4, cluster_std=0.6, random_state=0)
+X, _ = make_blobs(n_samples=300, centers=5, cluster_std=0.6, random_state=0)
 
-model = KMeansClustering(K=4,iterations=100,tolerance=0.001)
+model = KMeansClustering(K=5,iterations=100,tolerance=0.001)
 model.fit(X)
 
 plt.scatter(X[:, 0], X[:, 1], c=model.labels_, cmap='viridis')
@@ -65,3 +78,9 @@ plt.scatter(model.centroids[:, 0], model.centroids[:, 1], s=200, c='red', marker
 plt.title("K-Means Clustering (Custom)")
 plt.show()
 
+plt.plot(model.cost_history)
+plt.title("Cost Function Decrease Over Iterations")
+plt.xlabel("Iteration")
+plt.ylabel("Cost (Inertia)")
+plt.grid(True)
+plt.show()
