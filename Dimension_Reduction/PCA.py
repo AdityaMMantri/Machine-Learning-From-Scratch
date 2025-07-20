@@ -1,4 +1,7 @@
 import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_iris
+from sklearn.decomposition import PCA as SKPCA
 
 class PCA:
 
@@ -31,7 +34,7 @@ class PCA:
             v=A[:,j] # v is the current feature
             for i in range(j): # this loop is skipped for first iteration
                 R[i,j]=np.dot(Q[:,i],A[:,j])
-                v=v-R[i,j]*Q[i,j]
+                v=v-R[i,j]*Q[:,i]
             R[j,j]=np.linalg.norm(v)
             if R[j,j]==0:
                 Q[:,j]=v
@@ -52,14 +55,44 @@ class PCA:
         eigenvalues=np.diag(A_k)
         return eigenvalues,Q_total
         
-from sklearn.datasets import load_iris
-X = load_iris().data
 
-pca = PCA(n_components=4)
+data = load_iris()
+X = data.data
+y = data.target
+
+pca = PCA(n_components=2)
 pca.fit(X)
 X_reduced = pca.transform(X)
-
-print("Explained Variance:", pca.explained_variance)
-print("Principal Components:\n", pca.components)
 print("Reduced shape:", X_reduced.shape)
 
+sk_pca=SKPCA(n_components=2)
+X_reduced_sk=sk_pca.fit_transform(X)
+
+print("Custom PCA Explained Variance:", pca.explained_variance)
+print("Sklearn PCA Explained Variance:", sk_pca.explained_variance_)
+
+print("\nCustom PCA Components:\n", pca.components)
+print("\nSklearn PCA Components:\n", sk_pca.components_)
+
+plt.figure(figsize=(12, 5))
+
+plt.subplot(1, 2, 1)
+for label in np.unique(y):
+    plt.scatter(X_reduced[y == label, 0], X_reduced[y == label, 1], label=data.target_names[label])
+plt.title("Custom PCA")
+plt.xlabel("PC 1")
+plt.ylabel("PC 2")
+plt.grid(True)
+plt.legend()
+
+plt.subplot(1, 2, 2)
+for label in np.unique(y):
+    plt.scatter(X_reduced_sk[y == label, 0], X_reduced_sk[y == label, 1], label=data.target_names[label])
+plt.title("Sklearn PCA")
+plt.xlabel("PC 1")
+plt.ylabel("PC 2")
+plt.grid(True)
+plt.legend()
+
+plt.tight_layout()
+plt.show()
