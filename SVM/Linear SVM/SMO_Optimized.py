@@ -25,14 +25,16 @@ class HardMarginLinearSVM:
 
         while passes<self.max_passes:
             num_changed=0
-            f= X @ self.w + self.bias
+            f= X @ self.w + self.bias  # Error term used in SMO: E_i=f(x_i)-y_i
             E=f-y
             for i in range(n_rows):
                 r_i=y[i]*f[i]
-
+                # Case 1: alpha_i == 0→point must be outside margin (r_i >= 1)
+                # Case 2: alpha_i > 0→point must lie exactly on margin (r_i == 1)
                 violation_conditions=((alpha[i]<self.eps and r_i< 1-self.tol) or (alpha[i]>self.eps and abs(r_i-1)>self.tol)) # hard margin conditons
                 if not violation_conditions:
                     continue
+                 # by heuristic approach we are maximizing |E_i - E_j|
                 diff=np.abs(E[i] - E)
                 diff[i]=-np.inf
                 j=np.argmax(diff)
@@ -58,7 +60,7 @@ class HardMarginLinearSVM:
                 # condition of minimal update
                 if abs(alpha_j_new-alpha_j_old)<self.eps:
                     continue
-                alpha_i_new= alpha_i_old-y[i]*y[j]*(alpha_j_new-alpha_j_old)
+                alpha_i_new= alpha_i_old-y[i]*y[j]*(alpha_j_new-alpha_j_old) #Updating alpha_i USING EQUALITY CONSTRAINT
 
                 alpha[i]=alpha_i_new
                 alpha[j]=alpha_j_new
@@ -154,4 +156,6 @@ plt.title("Hard-Margin SVM: Custom SMO vs Scikit-learn")
 plt.legend()
 plt.grid(True)
 plt.show()
+
+
 
