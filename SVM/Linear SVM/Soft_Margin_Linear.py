@@ -36,6 +36,14 @@ class SoftMarginLinearSVM:
                 # We allow small numerical tolerance using tol and eps.
                 f_i=np.dot(X[i],self.w) + self.bias
                 E_i=f_i-y[i]
+                # Case 1:
+                # Point lies inside margin or is misclassified (y_i f(x_i) < 1) 
+                # and alpha can still be increased (alpha_i < C) 
+                # must push this point harder
+                # Case 2:
+                # Point is safely outside margin (y_i f(x_i) > 1)
+                # BUT alpha is non-zero
+                # → this point should not be a support vector
                 violation_conditions=((y[i]*E_i<-self.tol and alpha[i]<self.C)or(y[i]*E_i>self.tol and alpha[i]>0))
                 if not violation_conditions:
                     continue
@@ -141,3 +149,4 @@ def plot_decision_boundary(w, b, X, y, title):
 
 plot_decision_boundary(my_svm.w, my_svm.bias, X, y, "My SMO Soft-Margin SVM")
 plot_decision_boundary(sk_svm.coef_[0], sk_svm.intercept_[0], X, y, "sklearn Linear SVM")
+
