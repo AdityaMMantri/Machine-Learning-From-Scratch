@@ -5,12 +5,17 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score,confusion_matrix,f1_score,recall_score,classification_report
 
 class SoftmaxRegression:
-    def __init__(self,init="random",learning_rate=0.01,epochs=100): # default values provided
+    def __init__(self,init="random",learning_rate=0.01,epochs=100,regularization=None,_lambda_=0.01,l1_ratio=0.5): # default values provided
         self.lr=learning_rate
         self.epochs=epochs
         self.init=init
         self.W=None
         self.bias=None
+
+        # regularization parameters
+        self.regularization=regularization
+        self._lambda_=_lambda_
+        self.l1_ratio=l1_ratio
 
         #meta data
         self.n_classes=None
@@ -54,6 +59,19 @@ class SoftmaxRegression:
         loss=-np.mean(np.log(correct_probs+1e-9))
         return loss
     
+    def regularization_loss(self):
+            if self.regularization is None:
+                return 0
+            elif self.regularization=="l1":
+                return self._lambda_ * np.sum(np.abs(self.W))
+            elif self.regularization=="l2":
+                return self._lambda_ * np.sum(self.W**2)
+            elif self.regularization=="elasticnet":
+                l1=np.sum(np.abs(self.W))
+                l2=np.sum(self.W**2)
+
+                return self._lambda_ * ((self.l1_ratio*l1)+((1-self.l1_ratio)*l2))
+    
     def softmax(self,logits):
         '''
         subtract max logit from each row
@@ -94,6 +112,7 @@ class SoftmaxRegression:
             logits=X @ self.W + self.bias
             probabilities=self.softmax(logits=logits)
             loss=self.cross_entropy_loss(y=y,y_pred=probabilities)
+            loss+=self.regularization_loss()
             # the gradeint of the cross entropy loss with softmax resolves to y_pred/probabilities - y_actual
             # now instead of making y_actual as one hot vector what we do subtract 1 from the correct probability
             # basically suppose y_pred/probabilities = [0.1,0.7,0.2] and the correct class is 0 the model has 
@@ -108,9 +127,17 @@ class SoftmaxRegression:
             dW=X.T @ dZ
             db=np.sum(dZ,axis=0,keepdims=True)
 
+            if self.regularization=="l1":
+                dW+=self._lambda_*np.sign(self.W)
+            elif self.regularization=="l2":
+                dW+=2*self._lambda_*self.W
+            elif self.regularization=="elasticnet":
+                dW+=self._lambda_*((self.l1_ratio*np.sign(self.W))+((1-self.l1_ratio)*2*self.W))
+
             # parameter update
             self.W-=self.lr*dW
             self.bias-=self.lr*db
+
 
         return self
     
@@ -126,17 +153,19 @@ class SoftmaxRegression:
     
 X,y=make_classification(n_samples=5000,         # number of data points
                         n_features=10,          # number of total features
-                        n_informative=6,        # number of total useful/distinct features
-                        n_redundant=4,          # Creates features that are linear combinations of informative features. 
+                        n_informative=8,        # number of total useful/distinct features
+                        n_redundant=2,          # Creates features that are linear combinations of informative features. 
                         n_classes=5,            # Number of output classes.
                         n_clusters_per_class=1, #
                         random_state=42)
 
 X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.2,random_state=42)
 
-my_model=SoftmaxRegression(init="random",learning_rate=0.1,epochs=1000)
+my_model=SoftmaxRegression(init="random",learning_rate=0.1,epochs=1000,regularization="l1")
 my_model.fit(X=X_train,y=y_train)
 y_pred_custom=my_model.predict(X=X_test)
+print(np.linalg.norm(my_model.W))
+print(my_model.W)
 print("\n==============================")
 print("CUSTOM MODEL METRICS")
 print("==============================")
@@ -178,7 +207,7 @@ print(
     )
 )
 
-sk_model=LogisticRegression(multi_class="ovr",max_iter=1000,solver="lbfgs",penalty="l2")
+sk_model=LogisticRegression(multi_class="multinomial",max_iter=1000,solver="saga",l1_ratio=0.3)
 sk_model.fit(X=X_train,y=y_train)
 y_pred_sk=sk_model.predict(X=X_test)
 print("\n==============================")
@@ -233,4 +262,4 @@ print("\nYour Model:")
 print(y_pred_custom[:10])
 
 print("\nScikit Learn:")
-print(y_pred_sk[:10])
+print(y_pred_sk[:10])   
