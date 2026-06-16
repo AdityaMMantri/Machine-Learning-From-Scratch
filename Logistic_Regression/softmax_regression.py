@@ -126,10 +126,10 @@ class SoftmaxRegression:
     
 X,y=make_classification(n_samples=5000,         # number of data points
                         n_features=10,          # number of total features
-                        n_informative=6,        # number of total useful/distinct features
-                        n_redundant=4,          # Creates features that are linear combinations of informative features. 
-                        n_classes=5,            # Number of output classes.
-                        n_clusters_per_class=1, #
+                        n_informative=10,        # number of total useful/distinct features
+                        n_redundant=0,          # Creates features that are linear combinations of informative features. 
+                        n_classes=3,            # Number of output classes.
+                        n_clusters_per_class=2, #
                         random_state=42)
 
 X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.2,random_state=42)
@@ -137,31 +137,15 @@ X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.2,random_state=42
 my_model=SoftmaxRegression(init="random",learning_rate=0.1,epochs=1000)
 my_model.fit(X=X_train,y=y_train)
 y_pred_custom=my_model.predict(X=X_test)
+
 print("\n==============================")
 print("CUSTOM MODEL METRICS")
 print("==============================")
 
-custom_accuracy = accuracy_score(
-    y_test,
-    y_pred_custom
-)
-
-custom_f1 = f1_score(
-    y_test,
-    y_pred_custom,
-    average="weighted"
-)
-
-custom_recall = recall_score(
-    y_test,
-    y_pred_custom,
-    average="weighted"
-)
-
-custom_conf_matrix = confusion_matrix(
-    y_test,
-    y_pred_custom
-)
+custom_accuracy=accuracy_score(y_test,y_pred_custom)
+custom_f1=f1_score(y_test,y_pred_custom,average="weighted")
+custom_recall=recall_score(y_test,y_pred_custom,average="weighted")
+custom_conf_matrix=confusion_matrix(y_test,y_pred_custom)
 
 print(f"Accuracy : {custom_accuracy:.4f}")
 print(f"F1 Score : {custom_f1:.4f}")
@@ -171,41 +155,21 @@ print("\nConfusion Matrix:")
 print(custom_conf_matrix)
 
 print("\nClassification Report:")
-print(
-    classification_report(
-        y_test,
-        y_pred_custom
-    )
-)
+print(classification_report(y_test,y_pred_custom))
 
 sk_model=LogisticRegression(multi_class="ovr",max_iter=1000,solver="lbfgs",penalty="l2")
 sk_model.fit(X=X_train,y=y_train)
 y_pred_sk=sk_model.predict(X=X_test)
+
 print("\n==============================")
 print("SCIKIT LEARN METRICS")
 print("==============================")
 
-sk_accuracy = accuracy_score(
-    y_test,
-    y_pred_sk
-)
+sk_accuracy=accuracy_score(y_test,y_pred_sk)
+sk_f1=f1_score(y_test,y_pred_sk,average="weighted")
+sk_recall=recall_score(y_test,y_pred_sk,average="weighted")
 
-sk_f1 = f1_score(
-    y_test,
-    y_pred_sk,
-    average="weighted"
-)
-
-sk_recall = recall_score(
-    y_test,
-    y_pred_sk,
-    average="weighted"
-)
-
-sk_conf_matrix = confusion_matrix(
-    y_test,
-    y_pred_sk
-)
+sk_conf_matrix=confusion_matrix(y_test,y_pred_sk)
 
 print(f"Accuracy : {sk_accuracy:.4f}")
 print(f"F1 Score : {sk_f1:.4f}")
@@ -215,12 +179,7 @@ print("\nConfusion Matrix:")
 print(sk_conf_matrix)
 
 print("\nClassification Report:")
-print(
-    classification_report(
-        y_test,
-        y_pred_sk
-    )
-)
+print(classification_report(y_test,y_pred_sk))
 
 print("\n==============================")
 print("FIRST 10 PREDICTIONS")

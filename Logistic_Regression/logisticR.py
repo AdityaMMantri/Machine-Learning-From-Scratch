@@ -7,15 +7,17 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score,confusion_matrix,classification_report
-class LogisticRegression:
-    def __init__(self,alpha,iteration,feature_names):
-        self.alpha=alpha
+
+class BinaryLogisticRegression:
+    def __init__(self,learning_rate,iteration,feature_names):
+        self.learning_rate=learning_rate
         self.iterations=iteration
-        self.weights=0
-        self.bias=0
+        self.weights=None
+        self.bias=None
         self.feature_names=feature_names
     
     def sigmoid_probability(self, z):
+        z=np.clip(z, -500, 500)
         return 1/ (1 + np.exp(-z)) 
     
     def compute_cost(self, y, y_pred):
@@ -28,7 +30,8 @@ class LogisticRegression:
     def gradient_descent(self,X,y):
         n_sample,n_feature=X.shape
         self.weights=np.zeros(n_feature) #jitne number of columns utne feautres to utna array size chaiye humko
-        threshold=1e-4
+        self.bias=0.0
+        threshold=1e-6
         costs=[]
 
         for i in range(self.iterations):
@@ -40,10 +43,10 @@ class LogisticRegression:
             gradient_bias = (1 / n_sample) * np.sum(y_pred - y)
 
 
-            step_size_weight=self.alpha*gradient_weight
-            step_size_bias=self.alpha*gradient_bias
+            step_size_weight=self.learning_rate*gradient_weight
+            step_size_bias=self.learning_rate*gradient_bias
 
-            if np.all(step_size_weight) < threshold and np.abs(step_size_bias) < threshold:
+            if np.all(np.abs(step_size_weight)) < threshold and np.abs(step_size_bias) < threshold:
                 print(f"Converged after {i} iterations")
                 break
 
@@ -51,8 +54,8 @@ class LogisticRegression:
             self.bias=self.bias-step_size_bias
 
             if i % 100==0 or i==self.iterations-1:
-                cost=self.compute_cost(y,y_pred)
                 print(f"Iteration {i}, Cost: {cost}")
+        self.costs = costs
 
     def predict_values(self,X):
         z=np.dot(X, self.weights) + self.bias
@@ -129,7 +132,7 @@ for col in categorical_cols:
     plt.xlabel(col, fontsize=12)
     plt.ylabel('Count', fontsize=12)
     plt.xticks(rotation=45) 
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.grid(axis='y', linestyle='--', learning_rate=0.7)
 plt.show()
 
 df.hist(bins=30,figsize=(12,8))
@@ -142,7 +145,7 @@ plt.title('Count of Missing Values per Column', fontsize=14)
 plt.xlabel('Columns', fontsize=12)
 plt.ylabel('Count of Missing Values', fontsize=12)
 plt.xticks(rotation=45)
-plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.grid(axis='y', linestyle='--', learning_rate=0.7)
 plt.show()
 
 Q1=df[numeric_cols].quantile(0.25)
@@ -182,7 +185,7 @@ X=df_scaled.drop(columns=["Purchased"])
 y=df_scaled["Purchased"]
 X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.2,random_state=42)
 feature_names = ["Age", "EstimatedSalary", "Gender_Male"]
-log_reg = LogisticRegression(alpha=0.01, iteration=1000000, feature_names=feature_names)
+log_reg = BinaryLogisticRegression(learning_rate=0.01, iteration=1000000, feature_names=feature_names)
 
 log_reg.gradient_descent(X_train.values, y_train.values)
 
