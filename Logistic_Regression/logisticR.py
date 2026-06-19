@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score,confusion_matrix,classification_report
 
 class BinaryLogisticRegression:
-    def __init__(self,learning_rate,iteration,regularization=None,_lambda_=0.01,l1_ratio=0.5):
+    def __init__(self,learning_rate,iteration,regularization=None,_lambda_=0.01,l1_ratio=0.5,init="random"):
         valid_reg=[None,"l1","l2","elasticnet"]
         if regularization not in valid_reg:
             raise ValueError(f"Invalid regularization '{regularization}'. "
@@ -17,6 +17,7 @@ class BinaryLogisticRegression:
 
         self.learning_rate=learning_rate
         self.iterations=iteration
+        self.init=init
         self.weights=None
         self.bias=None
 
@@ -67,8 +68,25 @@ class BinaryLogisticRegression:
             raise ValueError("Binary Logistic Regression requires y to contain only 0 and 1")
         
         n_sample,n_feature=X.shape
-        self.weights=np.zeros(n_feature) #jitne number of columns utne feautres to utna array size chaiye humko
-        self.bias=0.0
+        if self.init=="zero":
+            self.weights = np.zeros(n_feature) #jitne number of columns utne feautres to utna array size chaiye humko
+            
+        elif self.init=="random":
+            self.weights=np.random.randn(n_feature) * 0.01
+        
+        elif self.init=="xavier":
+            std=np.sqrt(1 / n_feature)
+            self.weights = np.random.randn(n_feature) * std
+
+        elif self.init=="he":
+            std=np.sqrt(2 / n_feature)
+            self.weights=np.random.randn(n_feature) * std
+
+        else:
+            raise ValueError("Unsupported initialization type")
+
+        self.bias = 0.0 
+
         threshold=1e-6
         costs=[]
 
