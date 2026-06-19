@@ -5,12 +5,12 @@ from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (accuracy_score,classification_report,confusion_matrix,f1_score)
 
 class OneVsRestLogistic:
-    def __init__(self,learning_rate,iteration,feature_names):
+    def __init__(self,learning_rate,iteration,regularization=None,_lambda_=0.01,l1_ratio=0.5,init="random"):
         self.learning_rate=learning_rate
         self.iteration=iteration
-        self.feature_names=feature_names
         # Dictionary to store trained binary classifiers to later easliy access them for prediction
         # {   0: model_for_class_0,
         #     1: model_for_class_1,
@@ -18,6 +18,12 @@ class OneVsRestLogistic:
         self.classifiers:dict[int, BinaryLogisticRegression]={}
         # Stores all unique class labels found during training
         self.classes=None
+        self.init=init
+
+        # regularization parameters
+        self.regularization=regularization
+        self._lambda_=_lambda_
+        self.l1_ratio=l1_ratio
     
     def fit(self,X,y):
         # input-> X_train and y_train
@@ -39,7 +45,7 @@ class OneVsRestLogistic:
             model.gradient_descent(X=X,y=y_binary_labels)
             self.classifiers[current_class]=model
 
-    def predict_probabilites(self,X):
+    def predict_probabilities(self,X):
         # input -> X_test or any new unseen data, output -> probability matrix of shape: (n_samples, n_classes)
         # Algorithm:
         # 1. Find the number of samples and classes.
@@ -64,7 +70,7 @@ class OneVsRestLogistic:
     def predict(self,X):
         # for each sample find the class with the highest probablity 
         # find the class index and return the actual class label
-        probability_matrix=self.predict_probabilites(X)
+        probability_matrix=self.predict_probabilities(X)
         class_indices=np.argmax(probability_matrix,axis=1)
         predictions=self.classes[class_indices] # works with any class labels not just 0,1,2
 
@@ -82,31 +88,11 @@ X, y = make_classification(
     random_state=42
 )
 
-X_train,X_test,y_train,y_test = train_test_split(
-    X,
-    y,
-    test_size=0.2,
-    random_state=42,
-    stratify=y
-)
+X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2,random_state=42,stratify=y)
 
-feature_names = [f"Feature_{i}" for i in range(X.shape[1])]
-
-my_model = OneVsRestLogistic(
-    learning_rate=0.01,
-    iteration=5000,
-    feature_names=feature_names
-)
-
+my_model = OneVsRestLogistic(learning_rate=0.01,iteration=5000,regularization="l1",init="random")
 my_model.fit(X_train,y_train)
-
 my_pred = my_model.predict(X_test)
-from sklearn.metrics import (
-    accuracy_score,
-    classification_report,
-    confusion_matrix,
-    f1_score
-)
 
 print("="*50)
 print("MY OVR LOGISTIC REGRESSION")
@@ -125,15 +111,10 @@ print("\nClassification Report:")
 print(classification_report(y_test,my_pred))
 
 
-sk_model = OneVsRestClassifier(
-    LogisticRegression(
-        max_iter=5000
-    )
-)
-
+sk_model = OneVsRestClassifier(LogisticRegression(max_iter=5000))
 sk_model.fit(X_train,y_train)
-
 sk_pred = sk_model.predict(X_test)
+
 print("="*50)
 print("SCIKIT-LEARN OVR")
 print("="*50)
@@ -155,23 +136,17 @@ print("\nMY MODEL WEIGHTS")
 for cls in my_model.classes:
 
     model = my_model.classifiers[cls]
-
     print(f"\nClass {cls}")
-
     print("Weights:")
     print(model.weights)
-
     print("Bias:")
     print(model.bias)
 
 print("\nSKLEARN WEIGHTS")
 
 for idx, estimator in enumerate(sk_model.estimators_):
-
     print(f"\nClass {idx}")
-
     print("Weights:")
     print(estimator.coef_)
-
     print("Bias:")
     print(estimator.intercept_)
